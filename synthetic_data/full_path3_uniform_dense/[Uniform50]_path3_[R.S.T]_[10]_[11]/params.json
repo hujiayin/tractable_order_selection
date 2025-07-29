@@ -1,0 +1,66 @@
+{
+    "id": "Uniform50",
+    "pattern": "path3",
+    "atoms": [
+        [
+            "R",
+            [
+                "a",
+                "b"
+            ]
+        ],
+        [
+            "S",
+            [
+                "b",
+                "c"
+            ]
+        ],
+        [
+            "T",
+            [
+                "c",
+                "d"
+            ]
+        ]
+    ],
+    "num_rows_dict": {
+        "R": 10,
+        "S": 10,
+        "T": 10
+    },
+    "domain_size_dict": {
+        "a": 4,
+        "b": 4,
+        "c": 4,
+        "d": 4
+    },
+    "dist_type_dict": {
+        "a": [
+            "uniform"
+        ],
+        "b": [
+            "uniform"
+        ],
+        "c": [
+            "uniform"
+        ],
+        "d": [
+            "uniform"
+        ]
+    },
+    "save_dir": "synthetic_data/full_path3_uniform_dense1",
+    "seed": 11,
+    "join_count": 65,
+    "k_list": [
+        1,
+        10
+    ],
+    "q_list": [
+        0,
+        15,
+        31,
+        47,
+        64
+    ]
+}
