@@ -1,0 +1,37 @@
+{
+    "query":
+    [
+      {
+        "relation_name": "R",
+        "relation_schema": ["a", "b"],
+        "file_name": "./R.csv", 
+        "has_header": false
+      },
+  
+      {
+        "relation_name": "S",
+        "relation_schema": ["c", "d"],
+        "join_condition": ["R.b = S.c"],
+        "file_name": "./S.csv", 
+        "has_header": false
+      },
+  
+      {
+        "relation_name": "T",
+        "relation_schema": ["e", "f"],
+        "join_condition": ["S.d = T.e"],
+        "file_name": "./T.csv", 
+        "has_header": false
+      }
+    ],
+
+    "free_variables": 
+    [
+        "R.a", "R.b", "S.d", "T.f"
+    ],
+    
+    "lex_order": 
+    [
+        "R.a", "R.b", "S.d", "T.f"
+    ]
+}

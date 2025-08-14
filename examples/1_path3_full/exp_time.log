@@ -1,0 +1,103 @@
+[12:59:56]  Load and preprocess query took 2.163 ms
+[13:34:39]  LoadQuery took 2.230 ms
+[13:34:51]  LoadQuery took 2.148 ms
+[13:35:48]    LoadQuery took 2.070 ms
+[13:35:48]  LoadQueryA took 2.243 ms
+[13:36:36]    LoadQuery took 2.101 ms
+[13:36:36]  LoadQueryA took 2.286 ms
+[13:36:43]    LoadQuery took 2.007 ms
+[13:36:43]  LoadQueryA took 2.182 ms
+[14:09:03]  LoadQuery [exp=exp01_trial=1] took 2.186 ms
+[14:09:03]  PrepareTree [exp=exp01_trial=1] took 0.019 ms
+[14:09:03]  BuildTree [exp=exp01_trial=1] took 0.038 ms
+[14:09:03]  PreprocessBuckets [exp=exp01_trial=1] took 0.027 ms
+[14:09:03]  DirectAccess [exp=exp01_trial=1_k=0] took 0.024 ms
+[14:09:03]  DirectAccess [exp=exp01_trial=1_k=1] took 0.007 ms
+[14:09:03]  DirectAccess [exp=exp01_trial=1_k=2] took 0.006 ms
+[14:10:15]  LoadQuery took 2.012 ms
+[14:10:15]  PrepareTree took 0.016 ms
+[14:10:15]  BuildTree took 0.036 ms
+[14:10:15]  PreprocessBuckets took 0.026 ms
+[14:10:15]  DirectAccess took 0.011 ms
+[14:10:15]  DirectAccess took 0.007 ms
+[14:10:15]  DirectAccess took 0.005 ms
+[14:12:59]  LoadQuery took 2.078 ms
+[14:12:59]  PrepareTree took 0.019 ms
+[14:12:59]  BuildTree took 0.037 ms
+[14:12:59]  PreprocessBuckets took 0.029 ms
+[14:12:59]  DirectAccess took 0.012 ms
+[14:12:59]  DirectAccess took 0.007 ms
+[14:12:59]  DirectAccess took 0.006 ms
+[14:12:59]  DirectAccess took 0.005 ms
+[14:57:17]  LoadQuery took 1.982 ms
+[14:57:17]  PrepareTree took 0.017 ms
+[14:57:17]  BuildTree took 0.036 ms
+[14:57:17]  PreprocessBuckets took 0.027 ms
+[14:57:17]  DirectAccess took 0.011 ms
+[14:57:17]  DirectAccess took 0.006 ms
+[14:57:17]  DirectAccess took 0.006 ms
+[14:57:17]  DirectAccess took 0.004 ms
+[16:04:30]  LoadQuery [exp=exp01_trial=1] took 2.061 ms
+[16:04:30]  PrepareTree [exp=exp01_trial=1] took 0.015 ms
+[16:04:30]  BuildTree [exp=exp01_trial=1] took 0.035 ms
+[16:04:30]  PreprocessBuckets [exp=exp01_trial=1] took 0.027 ms
+[16:04:30]  DirectAccess took 0.011 ms
+[16:04:30]  DirectAccess [exp=exp01_trial=1_k=0] took 0.006 ms
+[16:04:30]  DirectAccess [exp=exp01_trial=1_k=1] took 0.005 ms
+[16:04:30]  DirectAccess [exp=exp01_trial=1_k=2] took 0.004 ms
+[16:14:42]  LoadQuery [exp=exp01_trial=1] took 1.990 ms
+[16:14:42]  PrepareTree [exp=exp01_trial=1] took 0.016 ms
+[16:14:42]  BuildTree [exp=exp01_trial=1] took 0.037 ms
+[16:14:42]  PreprocessBuckets [exp=exp01_trial=1] took 0.026 ms
+[16:14:42]  DirectAccess took 0.010 ms
+[16:14:42]  DirectAccess [exp=exp01_trial=1_k=0] took 0.006 ms
+[16:14:42]  DirectAccess [exp=exp01_trial=1_k=1] took 0.005 ms
+[16:14:42]  DirectAccess [exp=exp01_trial=1_k=2] took 0.004 ms
+[16:15:00]  LoadQuery [exp=exp01_trial=1] took 2.076 ms
+[16:15:00]  PrepareTree [exp=exp01_trial=1] took 0.016 ms
+[16:15:00]  BuildTree [exp=exp01_trial=1] took 0.037 ms
+[16:15:00]  PreprocessBuckets [exp=exp01_trial=1] took 0.027 ms
+[16:15:00]  DirectAccess took 0.014 ms
+[16:15:00]  DirectAccess [exp=exp01_trial=1_k=0] took 0.006 ms
+[16:15:00]  DirectAccess [exp=exp01_trial=1_k=1] took 0.005 ms
+[16:15:00]  DirectAccess [exp=exp01_trial=1_k=2] took 0.005 ms
+[16:19:06]  LoadQuery [exp=exp01_trial=1] took 2.092 ms
+[16:19:06]  PrepareTree [exp=exp01_trial=1] took 0.015 ms
+[16:19:06]  BuildTree [exp=exp01_trial=1] took 0.037 ms
+[16:19:06]  PreprocessBuckets [exp=exp01_trial=1] took 0.028 ms
+[16:19:06]  DirectAccess took 0.011 ms
+[16:19:06]  DirectAccess [exp=exp01_trial=1_k=0] took 0.006 ms
+[16:19:06]  DirectAccess [exp=exp01_trial=1_k=1] took 0.006 ms
+[16:19:06]  DirectAccess [exp=exp01_trial=1_k=2] took 0.005 ms
+[16:28:02]  LoadQuery [exp=exp01_trial=1] took 2.105 ms
+[16:28:02]  PrepareTree [exp=exp01_trial=1] took 0.027 ms
+[16:28:02]  BuildTree [exp=exp01_trial=1] took 0.037 ms
+[16:28:02]  PreprocessBuckets [exp=exp01_trial=1] took 0.027 ms
+[16:28:02]  DirectAccess took 0.014 ms
+[16:28:02]  DirectAccess [exp=exp01_trial=1_k=0] took 0.006 ms
+[16:28:02]  DirectAccess [exp=exp01_trial=1_k=1] took 0.006 ms
+[16:28:02]  DirectAccess [exp=exp01_trial=1_k=2] took 0.005 ms
+[16:29:56]  LoadQuery [exp=exp01_trial=1] took 2.084 ms
+[16:29:56]  PrepareTree [exp=exp01_trial=1] took 0.017 ms
+[16:29:56]  BuildTree [exp=exp01_trial=1] took 0.038 ms
+[16:29:56]  PreprocessBuckets [exp=exp01_trial=1] took 0.028 ms
+[16:29:56]  DirectAccess took 0.015 ms
+[16:29:56]  DirectAccess [exp=exp01_trial=1_k=0] took 0.007 ms
+[16:29:56]  DirectAccess [exp=exp01_trial=1_k=1] took 0.007 ms
+[16:29:56]  DirectAccess [exp=exp01_trial=1_k=2] took 0.006 ms
+[16:35:14]  LoadQuery [exp=exp01_trial=1] took 2.004 ms
+[16:35:14]  PrepareTree [exp=exp01_trial=1] took 0.022 ms
+[16:35:14]  BuildTree [exp=exp01_trial=1] took 0.038 ms
+[16:35:14]  PreprocessBuckets [exp=exp01_trial=1] took 0.025 ms
+[16:35:14]  DirectAccess took 0.013 ms
+[16:35:14]  DirectAccess [exp=exp01_trial=1_k=0] took 0.006 ms
+[16:35:14]  DirectAccess [exp=exp01_trial=1_k=1] took 0.006 ms
+[16:35:14]  DirectAccess [exp=exp01_trial=1_k=2] took 0.060 ms
+[17:28:40]  LoadQuery [exp=exp01_trial=1] took 2.099 ms
+[17:28:40]  PrepareTree [exp=exp01_trial=1] took 0.016 ms
+[17:28:40]  BuildTree [exp=exp01_trial=1] took 0.036 ms
+[17:28:40]  PreprocessBuckets [exp=exp01_trial=1] took 0.026 ms
+[17:28:40]  DirectAccess took 0.014 ms
+[17:28:40]  DirectAccess [exp=exp01_trial=1_k=0] took 0.006 ms
+[17:28:40]  DirectAccess [exp=exp01_trial=1_k=1] took 0.063 ms
+[17:28:40]  DirectAccess [exp=exp01_trial=1_k=2] took 0.006 ms

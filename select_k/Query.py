@@ -1,21 +1,27 @@
 from copy import deepcopy
+import json
+from pathlib import Path
+from exp_timer.exp_timer import timer
 from select_k.JoinTreeNode import JoinTreeNode
 from collections import defaultdict, deque
 from select_k.Relation import Relation
 from typing import Dict, Tuple, Optional, List, Set
+import pandas as pd
 
 class ConjunctiveQuery: 
+    @timer(name="LoadQuery", extra=lambda ctx: f"exp={ctx.exp_id}_trial={ctx.trial}" if hasattr(ctx, 'exp_id') and hasattr(ctx, 'trial') else None)
     def __init__(self, 
                  atoms: List, 
                  free_vars: List, 
                  lex_order: List|Dict[str, int]=None, 
-                 data: Optional[Dict[str, List]]=None):
+                 data: Optional[Dict[str, List]]=None, 
+                 need_check: bool=True):
         """
         Initialize a Conjunctive Query. 
         atoms: [(relation_name, (variables of the relation))]
         """
         # atoms to relations
-        self.atoms = [Relation(name=atom[0], variables=atom[1], instance=data[atom[0]], lex_order=lex_order) for atom in atoms]
+        self.atoms = [Relation(name=atom[0], variables=atom[1], instance=data[atom[0]], lex_order=lex_order, need_check=need_check) for atom in atoms]
 
         self.hyperedges = [set(atom[1]) for atom in atoms]
 
@@ -63,6 +69,110 @@ class ConjunctiveQuery:
               \nComplete LEX: {"Y" if not self.partial_lex else "N"}\
               \nFree connex: {"Y" if self.free_connex else "N"}\
               \nLEX connex: {"Y" if self.lex_connex else "N"}")
+        
+    @classmethod
+    def from_query_file(cls, query_file: Path, data_dir:Path=None):
+        """
+        Load a Conjunctive Query from a JSON object.
+        The JSON file should contain:
+        - "query": list of relations with their schema, join conditions, and file paths
+        - "free_variables": list of free variables (e.g., ["R.a", "S.b"])
+        - "lex_order": list of variables defining the lexicographic order (e.g., ["R.a", "S.b"])
+        - Each relation in "query" should have:
+            - "relation_name": name of the relation
+            - "relation_schema": list of variable names in the relation
+            - "join_condition": (optional) list of join conditions (e.g., [["R.a = S.b"]]) [without join_condition: cartesian product]
+            - "file_name": path to the CSV file containing the relation data
+        If data_dir is provided, it is used as the base directory for relation file paths.
+        """
+        json_path = Path(query_file).resolve()
+        data_dir = data_dir if data_dir else json_path.parent
+        if not json_path.exists():
+            raise FileNotFoundError(f"JSON file {query_file} does not exist.")
+
+        json_obj = json.loads(json_path.read_text())
+        relations = json_obj["query"]
+        file_data = {}
+        var_map = {}
+
+        # initialize variable mapping and load data
+        for rel in relations:
+            rel_name = rel["relation_name"]
+            schema = rel["relation_schema"]
+            for attr in schema:
+                var_map[f"{rel_name}.{attr}"] = f"{rel_name}.{attr}"
+
+        # process join conditions to unify variables
+        parent = {}
+
+        def find(x):
+            while parent.get(x, x) != x:
+                x = parent[x]
+            return x
+
+        def union(x, y):
+            x_root = find(x)
+            y_root = find(y)
+            if x_root != y_root:
+                parent[y_root] = x_root
+
+        for rel in relations:
+            for cond in rel.get("join_condition", []):
+                left, right = cond.replace(" ", "").split("=")
+                union(left, right)
+
+        #  final variable mapping 
+        for key in var_map:
+            root = find(key)
+            var_map[key] = root  
+
+        #  construct atoms
+        atoms = []
+        for rel in relations:
+            rel_name = rel["relation_name"]
+            schema = rel["relation_schema"]
+            vars_in_relation = tuple(var_map[f"{rel_name}.{attr}"] for attr in schema)
+            atoms.append((rel_name, vars_in_relation))
+
+            # load data
+            data_path = data_dir / rel["file_name"]
+            has_header = rel.get("has_header", True)  # default True    
+            header = 0 if has_header else None
+            sep = rel.get("file_sep", ",")
+            df = pd.read_csv(data_path,
+                                header=header,
+                                sep=sep,
+                                encoding="utf-8",
+                                na_values=["", "NA", "null", "NULL"],
+                                low_memory=False)
+            if not has_header:
+                if df.shape[1] != len(vars_in_relation):
+                    raise ValueError(
+                        f"Column number does not match: file {path} has {df.shape[1]} columns, but definition has {len(vars_in_relation)} columns"
+                    )
+                df.columns = vars_in_relation
+            file_data[rel_name] = df.to_dict(orient="list")
+
+        #  process free_variables
+        free_vars = [var_map[v] for v in json_obj["free_variables"]]
+
+        #  process lex_order, if list: default ascending (1)
+        raw_lex = json_obj["lex_order"] 
+        if isinstance(raw_lex, list): 
+            lex_order = {var_map[v]: 1 for v in raw_lex}  
+        elif isinstance(raw_lex, dict):
+            lex_order = {var_map[k]: v for k, v in raw_lex.items()}
+        else:
+            raise ValueError("Parse JSON Error: lex_order must be a list or a dict") 
+        
+        # print("Parsed Query:")
+        # print(f"  Atoms: {atoms}")
+        # print(f"  Free Variables: {free_vars}")
+        # print(f"  Lexical Order: {lex_order}")
+        # print(f"  Data: {file_data}")
+
+        return cls(atoms=atoms, free_vars=free_vars, lex_order=lex_order, data=file_data)
+    
 
     @staticmethod
     def is_x_connex_cq(hyperedges: List[Set], x_vars: Set|List):

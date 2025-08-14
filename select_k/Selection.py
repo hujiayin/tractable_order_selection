@@ -3,9 +3,10 @@ from select_k.Query import ConjunctiveQuery
 from select_k.JoinTreeNode import JoinTreeNode
 import numpy as np
 from collections import defaultdict
+from exp_timer.exp_timer import timer
 
-
-class Selection:
+class Selection: 
+    @timer(name="PrepareSelection", extra=lambda ctx: f"exp={ctx.exp_id}_trial={ctx.trial}" if hasattr(ctx, 'exp_id') and hasattr(ctx, 'trial') else None)
     def __init__(self, cq: ConjunctiveQuery):
         """
         Initialize Selection Class to determine if the selection is possible.
@@ -16,6 +17,7 @@ class Selection:
         else: 
             print('Tractable for Selection.') 
 
+    @timer(name="SelectK", extra=lambda ctx: f"exp={ctx.exp_id}_trial={ctx.trial}" if hasattr(ctx, 'exp_id') and hasattr(ctx, 'trial') else None)
     def select_k(self, k:int): 
         """
         Select the k-th record according to the lexicographic order.

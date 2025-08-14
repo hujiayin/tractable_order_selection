@@ -4,9 +4,10 @@ from select_k.JoinTreeNode import JoinTreeNode
 from select_k.Relation import Relation
 import numpy as np
 from collections import defaultdict
-from exp_timer import Timer
+from exp_timer.exp_timer import timer
 
 class LayeredJoinTree:
+    @timer(name="PrepareTree", extra=lambda ctx: f"exp={ctx.exp_id}_trial={ctx.trial}" if hasattr(ctx, 'exp_id') and hasattr(ctx, 'trial') else None)
     def __init__(self, cq: ConjunctiveQuery):
         """
         Initialize the Join Tree constructor.
@@ -90,80 +91,81 @@ class LayeredJoinTree:
                 return False
             
         return True
-    
-    def build_layered_join_tree(self): 
+
+    @timer(name="BuildTree", extra=lambda ctx: f"exp={ctx.exp_id}_trial={ctx.trial}" if hasattr(ctx, 'exp_id') and hasattr(ctx, 'trial') else None)
+    def build_layered_join_tree(self):
 
         if not self.query.full: 
-            with Timer("DRAC_AuxiliaryTree"):
-                self.query.build_auxiliary_tree()
+            
+            self.query.build_auxiliary_tree()
         
         atoms = self.query.atoms_free
 
         if self.query.partial_lex: 
-            with Timer("DRAC_LexPlus"):
-                self.query.lex_order_plus_greedy()
+            
+            self.query.lex_order_plus_greedy()
             lex_order = self.query.lex_order_plus
         else: 
             lex_order = self.query.lex_order
 
-        with Timer("DRAC_BuildLayeredJoinTree(Inner)"): 
-            for i, max_variable in enumerate(lex_order):
-                # Find the max relation with projection of the first i elements in lexicographic_order
-                max_relation_proj = None 
-                width = 0
-                current_layer = i + 1
-                node_rel = None
-                # find the relation or the projection of the relation assigning to layer i+1 (start from layer 1)
-                for relation in atoms: 
-                    if max_variable in relation.variables: 
-                        # intersection of the original relation and the current layer LEX order. in the order of LEX
-                        variables = [v for v in lex_order[: current_layer] if v in relation.variables]
-                        if len(variables) > width: 
-                            width = len(variables)
-                            if_projection = False
-                            if len(variables) != relation.width: # not original relation. need projection
-                                if_projection = True 
-                            node_variable = variables
-                            node_rel = relation # In the layered join tree, the order of variables in relations aligns with the lexicographic order
-                
-                # Assign relation to the specific node(layer)
-                if if_projection: # create new relation by the projection
-                    name = node_rel.name + '-' + str(current_layer)
-                    data = Relation.project_remove_duplicates(data=node_rel.instance_row, 
-                                                            orig_vars=node_rel.variables, 
-                                                            new_vars=node_variable)
-                    max_relation_proj = Relation(name, node_variable, 
-                                                instance=data, 
-                                                lex_order=self.query.lex_dict, 
-                                                need_check=False)
-                else: 
-                    max_relation_proj = node_rel
-                    # max_relation_proj.variables = tuple(node_variable)
+        
+        for i, max_variable in enumerate(lex_order):
+            # Find the max relation with projection of the first i elements in lexicographic_order
+            max_relation_proj = None 
+            width = 0
+            current_layer = i + 1
+            node_rel = None
+            # find the relation or the projection of the relation assigning to layer i+1 (start from layer 1)
+            for relation in atoms: 
+                if max_variable in relation.variables: 
+                    # intersection of the original relation and the current layer LEX order. in the order of LEX
+                    variables = [v for v in lex_order[: current_layer] if v in relation.variables]
+                    if len(variables) > width: 
+                        width = len(variables)
+                        if_projection = False
+                        if len(variables) != relation.width: # not original relation. need projection
+                            if_projection = True 
+                        node_variable = variables
+                        node_rel = relation # In the layered join tree, the order of variables in relations aligns with the lexicographic order
+            
+            # Assign relation to the specific node(layer)
+            if if_projection: # create new relation by the projection
+                name = node_rel.name + '-' + str(current_layer)
+                data = Relation.project_remove_duplicates(data=node_rel.instance_row, 
+                                                        orig_vars=node_rel.variables, 
+                                                        new_vars=node_variable)
+                max_relation_proj = Relation(name, node_variable, 
+                                            instance=data, 
+                                            lex_order=self.query.lex_dict, 
+                                            need_check=False)
+            else: 
+                max_relation_proj = node_rel
+                # max_relation_proj.variables = tuple(node_variable)
 
-                # rank data in max_relation_proj
-                max_relation_proj.lex_sort(self.query.lex_dict)
-                
-                # Add the maximal hyperedge to the tree
-                treenode = JoinTreeNode(max_relation_proj, current_layer) 
-                self.direct_access_tree[current_layer] = treenode 
+            # rank data in max_relation_proj
+            max_relation_proj.lex_sort(self.query.lex_dict)
+            
+            # Add the maximal hyperedge to the tree
+            treenode = JoinTreeNode(max_relation_proj, current_layer) 
+            self.direct_access_tree[current_layer] = treenode 
 
-                if current_layer == 1: 
-                    self.direct_access_tree_root = treenode
+            if current_layer == 1: 
+                self.direct_access_tree_root = treenode
 
-                # Connect to the previous layer (if exists)
-                if current_layer > 1: 
-                    j = i
-                    while j >= 1: 
-                        # print('Tree Layer', j, self.direct_access_tree[j])
-                        if frozenset(self.direct_access_tree[j].relation.variables).issuperset(frozenset(max_relation_proj.variables) - {max_variable}): 
-                            connection = frozenset(self.direct_access_tree[j].relation.variables).intersection(frozenset(max_relation_proj.variables) - {max_variable})
-                            connection = [v for v in lex_order if v in connection]
-                            self.direct_access_tree[j].children.append(treenode)
-                            self.direct_access_tree[j].children_connection[treenode] = connection
-                            self.direct_access_tree[current_layer].parent = self.direct_access_tree[j] 
-                            self.direct_access_tree[current_layer].parent_connection = connection
-                            break
-                        j -= 1 
+            # Connect to the previous layer (if exists)
+            if current_layer > 1: 
+                j = i
+                while j >= 1: 
+                    # print('Tree Layer', j, self.direct_access_tree[j])
+                    if frozenset(self.direct_access_tree[j].relation.variables).issuperset(frozenset(max_relation_proj.variables) - {max_variable}): 
+                        connection = frozenset(self.direct_access_tree[j].relation.variables).intersection(frozenset(max_relation_proj.variables) - {max_variable})
+                        connection = [v for v in lex_order if v in connection]
+                        self.direct_access_tree[j].children.append(treenode)
+                        self.direct_access_tree[j].children_connection[treenode] = connection
+                        self.direct_access_tree[current_layer].parent = self.direct_access_tree[j] 
+                        self.direct_access_tree[current_layer].parent_connection = connection
+                        break
+                    j -= 1 
                 
 
     def get_leaf_to_root_order(self):
@@ -197,6 +199,7 @@ class LayeredJoinTree:
 
         return order
     
+    @timer(name="PreprocessBuckets", extra=lambda ctx: f"exp={ctx.exp_id}_trial={ctx.trial}" if hasattr(ctx, 'exp_id') and hasattr(ctx, 'trial') else None)
     def direct_access_preprocessing(self):
         leaf_to_root_order = self.get_leaf_to_root_order()
 
@@ -208,6 +211,7 @@ class LayeredJoinTree:
         # for i in range(len(leaf_to_root_order)): 
         #     print(self.direct_access_tree[i+1].buckets)
 
+    @timer(name="DirectAccess", extra=lambda ctx: f"exp={ctx.exp_id}_trial={ctx.trial}_k={ctx.k}" if hasattr(ctx, 'exp_id') and hasattr(ctx, 'trial') and hasattr(ctx, 'k') else None)
     def direct_access(self, k:int):
         """
         Access the k-th tuple in lexicographic order, using precomputed weights and indices.

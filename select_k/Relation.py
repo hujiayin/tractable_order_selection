@@ -72,6 +72,8 @@ class Relation:
             # data_t = list(zip(*data))
             # self.instance_col = {col: list(vals) for col, vals in zip(self.variables, data_t)}
             self.instance_row = data
+        else:
+            raise TypeError(f"Invalid data type for instance: {type(data)}. Expected List or Dict.")
             
         self.rowid = list(range(data_len)) # initial rowid
          
@@ -100,14 +102,11 @@ class Relation:
             indices = [orig_vars.index(c) for c in new_vars] 
             new_data = list(dict.fromkeys(tuple(row[i] for i in indices) for row in data)) # keep the original order (we CARE!!! the order here)
 
-
         return new_data
     
     def lex_sort(self, query_lex_dict): 
         lex_dict = {v: query_lex_dict[v] for v in query_lex_dict if v in self.variables} 
         self.lex_vars = {v: self.variables.index(v) for v in query_lex_dict if v in self.variables}
-        # lex_vars = self.lex_vars 
-        # lex_dict = self.lex_dict
         for var, col_idx in reversed(self.lex_vars.items()):
             if lex_dict[var] != 0:
                 self.rowid.sort(key=lambda i: self.instance_row[i][col_idx], reverse=(lex_dict[var] == -1)) 

@@ -1,0 +1,34 @@
+timestamp,exp_id,trial,process,k,duration_ms
+2025-08-11 16:28:02,exp01,1,LoadQuery,,2.105
+2025-08-11 16:28:02,exp01,1,PrepareTree,,0.027
+2025-08-11 16:28:02,exp01,1,BuildTree,,0.037
+2025-08-11 16:28:02,exp01,1,PreprocessBuckets,,0.027
+2025-08-11 16:28:02,exp01,1,DirectAccess,,0.014
+2025-08-11 16:28:02,exp01,1,DirectAccess,0,0.006
+2025-08-11 16:28:02,exp01,1,DirectAccess,1,0.006
+2025-08-11 16:28:02,exp01,1,DirectAccess,2,0.005
+timestamp,exp_id,trial,process,k,duration_ms
+2025-08-11 16:29:56,exp01,1,LoadQuery,,2.084
+2025-08-11 16:29:56,exp01,1,PrepareTree,,0.017
+2025-08-11 16:29:56,exp01,1,BuildTree,,0.038
+2025-08-11 16:29:56,exp01,1,PreprocessBuckets,,0.028
+2025-08-11 16:29:56,exp01,1,DirectAccess,,0.015
+2025-08-11 16:29:56,exp01,1,DirectAccess,0,0.007
+2025-08-11 16:29:56,exp01,1,DirectAccess,1,0.007
+2025-08-11 16:29:56,exp01,1,DirectAccess,2,0.006
+2025-08-11 16:35:14,exp01,1,LoadQuery,,2.004
+2025-08-11 16:35:14,exp01,1,PrepareTree,,0.022
+2025-08-11 16:35:14,exp01,1,BuildTree,,0.038
+2025-08-11 16:35:14,exp01,1,PreprocessBuckets,,0.025
+2025-08-11 16:35:14,exp01,1,DirectAccess,,0.013
+2025-08-11 16:35:14,exp01,1,DirectAccess,0,0.006
+2025-08-11 16:35:14,exp01,1,DirectAccess,1,0.006
+2025-08-11 16:35:14,exp01,1,DirectAccess,2,0.06
+2025-08-11 17:28:40,exp01,1,LoadQuery,,2.099
+2025-08-11 17:28:40,exp01,1,PrepareTree,,0.016
+2025-08-11 17:28:40,exp01,1,BuildTree,,0.036
+2025-08-11 17:28:40,exp01,1,PreprocessBuckets,,0.026
+2025-08-11 17:28:40,exp01,1,DirectAccess,,0.014
+2025-08-11 17:28:40,exp01,1,DirectAccess,0,0.006
+2025-08-11 17:28:40,exp01,1,DirectAccess,1,0.063
+2025-08-11 17:28:40,exp01,1,DirectAccess,2,0.006
