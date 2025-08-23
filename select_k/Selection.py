@@ -164,6 +164,7 @@ class Selection:
                     key = tuple(tup[i] for i in child_key_idx)
                     weight_map[key] += w
 
+                ## TODO: Potential optimization: do not allocate new array, modify the weights in place
                 new_weights = []
                 for tup, w in zip(node.relation.instance_row, node.select_count):
                     key = tuple(tup[i] for i in parent_key_idx)

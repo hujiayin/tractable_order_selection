@@ -49,9 +49,9 @@ class ConjunctiveQuery:
         if sum_order:
             if isinstance(sum_order, List):
                 # Turn into a dict with weight = 1 for each attribute
-                self.sum_dict = {v: 1 for v in sum_order}
+                self.sum_order = {v: 1 for v in sum_order}
             elif isinstance(sum_order, Dict):
-                self.sum_dict = sum_order
+                self.sum_order = sum_order
 
         #lex order + (with all free variables)
         self.lex_order_plus = None
@@ -60,7 +60,9 @@ class ConjunctiveQuery:
                 self.partial_lex = False
             else: 
                 self.partial_lex = True
-        
+        else:
+            self.partial_lex = False
+
         # connexity
         self.free_connex = True if self.full else \
             self.is_x_connex_cq(self.hyperedges, self.free_vars)
@@ -526,4 +528,9 @@ class ConjunctiveQuery:
                 root_relation = atom
                 break
         self.root_node, _ = self.ear_decomposition_gyo(atoms, root_rel=root_relation) 
+        return self.root_node
+    
+    def build_join_tree_arbitrary_root(self): 
+        atoms = self.atoms_free
+        self.root_node, _ = self.ear_decomposition_gyo(atoms, root_rel=atoms[0]) 
         return self.root_node
