@@ -17,6 +17,7 @@ class JoinTreeNode:
         self.aux = aux
         self.buckets = None # for direct access 
         self.select_count = None # for selection
+        self.pivots = None # for SUM selection
 
     def __repr__(self):
         return f"Node - Layer {self.layer} {self.relation.name}: {self.relation.variables}"

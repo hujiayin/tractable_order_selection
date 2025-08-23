@@ -15,7 +15,9 @@ class ConjunctiveQuery:
                  free_vars: List, 
                  lex_order: List|Dict[str, int]=None, 
                  data: Optional[Dict[str, List]]=None, 
-                 need_check: bool=True):
+                 need_check: bool=True,
+                 sum_order: List|Dict[str, int]=None, 
+                 ):
         """
         Initialize a Conjunctive Query. 
         atoms: [(relation_name, (variables of the relation))]
@@ -42,6 +44,14 @@ class ConjunctiveQuery:
             elif isinstance(lex_order, Dict): # by the given ranking type [ascending(1), descending(-1)]
                 self.lex_order = list(lex_order.keys())
                 self.lex_dict = lex_order
+
+        # The sum order is stored as a dict with attributes as keys and weights as values
+        if sum_order:
+            if isinstance(sum_order, List):
+                # Turn into a dict with weight = 1 for each attribute
+                self.sum_dict = {v: 1 for v in sum_order}
+            elif isinstance(sum_order, Dict):
+                self.sum_dict = sum_order
 
         #lex order + (with all free variables)
         self.lex_order_plus = None
