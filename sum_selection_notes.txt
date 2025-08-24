@@ -6,3 +6,5 @@ Code structure
 Simplifying assumptions
 - order always ascending (for descending, we can multiply every attribute with negative weight)
 - for now, only full queries with 2 atoms (to generalize, need to check condition and build join tree with SUM variables on adjacent nodes)
+- connection is not empty
+- zero indexing. Is this the same for the rest of the code?
