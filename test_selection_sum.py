@@ -89,7 +89,8 @@ data = {
 sum_order = ['a', 'b', 'c']
 # sum_order = {'c':-1, 'a':1, }
 # test_s()
-print("Pivot selected: ", selection_by_sum(atoms, free_vars, sum_order, data, 2))
+k = 2
+print("Answer returned for k= ", k, ": ", selection_by_sum(atoms, free_vars, sum_order, data, k))
 
 # %%
 # Non-full CQ

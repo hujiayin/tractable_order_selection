@@ -64,17 +64,25 @@ class Selection_Sum:
             pivot = self.pick_pivot(current_root, self.query.sum_order)
             pivot_sum = sum(pivot[var] for var in self.query.sum_order)
             pivot['sum'] = pivot_sum
+            print("Pivot selected: ", pivot)
 
             remaining_answers = sum(current_root.select_count)
+            print("Remaining answers: ", remaining_answers)
 
             # Create a new query (with a new database) that produces the answers that are smaller than the pivot
             # (satisfying the inequality SUM < pivot['sum'])
             # For simplicity, we directly work on the join tree, not the query structure
             root_less_than = self.trim_lt_inequality(current_root, self.sum_vars_1, self.sum_vars_2, pivot_sum)
-            count_less_than = Selection.bottom_up_count(root_less_than)
+            Selection.bottom_up_count(root_less_than)
+            count_less_than = sum(root_less_than.select_count)
+            print("Count less than pivot: ", count_less_than)
+            print("Root in less than: ", root_less_than.relation.instance_row)
+            print("Child in less than: ", root_less_than.children[0].relation.instance_row)
 
             root_greater_than = self.trim_gt_inequality(current_root, self.sum_vars_1, self.sum_vars_2, pivot_sum)
-            count_greater_than = Selection.bottom_up_count(root_greater_than)
+            Selection.bottom_up_count(root_greater_than)
+            count_greater_than = sum(root_greater_than.select_count)
+            print("Count greater than pivot: ", count_greater_than)
 
             count_equal = remaining_answers - count_less_than - count_greater_than
 
@@ -99,11 +107,11 @@ class Selection_Sum:
 
     @staticmethod
     def trim_lt_inequality(root: JoinTreeNode, sum_vars_root: list, sum_vars_child: list, offset: float):
-        Selection_Sum.trim_inequality(root, sum_vars_root, sum_vars_child, offset, -1)
+        return Selection_Sum.trim_inequality(root, sum_vars_root, sum_vars_child, offset, -1)
 
     @staticmethod
     def trim_gt_inequality(root: JoinTreeNode, sum_vars_root: list, sum_vars_child: list, offset: float):
-        Selection_Sum.trim_inequality(root, sum_vars_root, sum_vars_child, offset, 1)
+        return Selection_Sum.trim_inequality(root, sum_vars_root, sum_vars_child, offset, 1)
 
     @staticmethod
     def trim_inequality(root: JoinTreeNode, sum_vars_root: list, sum_vars_child: list, offset: float, direction: int):
@@ -116,14 +124,6 @@ class Selection_Sum:
         offset: float, the offset to apply
         direction: int, the direction of the inequality (1 for >, -1 for <)
         """
-
-        # for key in root.children_connection.keys():
-        #     if key is not root.children[0]:
-        #         print("NOT THE SAME")
-        #         print(key)
-        #         print(root.children[0])
-        #     else:
-        #         print("SAME")
 
         # Initialize the new relations
         new_relation_root = copy.copy(root.relation)
@@ -147,7 +147,7 @@ class Selection_Sum:
 
         # children_connection is a dict with join tree nodes as keys so we need to modify it now that we changed the child node
         del new_root.children_connection[root.children[0]]
-        new_root.children_connection[new_root.children[0]] = root.children_connection[root.children[0]]
+        new_root.children_connection[new_root.children[0]] = copy.copy(root.children_connection[root.children[0]])
 
         new_root.relation = new_relation_root
         new_root.children[0].relation = new_relation_child
@@ -161,6 +161,7 @@ class Selection_Sum:
             ineq_var_root_idx = new_relation_root.variables.index(new_var_name)
         else:
             new_relation_root.variables = new_relation_root.variables + (new_var_name,)
+            new_relation_root.width += 1
             ineq_var_root_idx = len(new_relation_root.variables) - 1
             # Adjust the connection of the root to the child, adding the new variable to the existing connection
             new_root.children_connection[new_root.children[0]].add(new_var_name)
@@ -169,9 +170,11 @@ class Selection_Sum:
             ineq_var_child_idx = new_relation_child.variables.index(new_var_name)
         else:
             new_relation_child.variables = new_relation_child.variables + (new_var_name,)
+            new_relation_child.width += 1
             ineq_var_child_idx = len(new_relation_child.variables) - 1
             # Adjust the parent connection of the child to the root, adding the new variable to the existing connection
             new_root.children[0].parent_connection.add(new_var_name)
+
 
         # Now we are ready to modify the data
         Selection_Sum.trim_data_inequality(new_relation_root, new_relation_child, root.relation, root.children[0].relation, root.children_connection[root.children[0]],
@@ -198,7 +201,7 @@ class Selection_Sum:
                 new_parent_row = parent_row[:ineq_var_parent_idx] + (new_var_value_id,) + parent_row[(ineq_var_parent_idx + 1):-1]
                 new_parent.instance_row.append(new_parent_row)
             for child_row in child_tuples:
-                new_child_row = child_row[:ineq_var_child_idx] + (-new_var_value_id,) + child_row[(ineq_var_child_idx + 1):-1]
+                new_child_row = child_row[:ineq_var_child_idx] + (new_var_value_id,) + child_row[(ineq_var_child_idx + 1):-1]
                 new_child.instance_row.append(new_child_row)
 
 
@@ -265,6 +268,10 @@ class Selection_Sum:
         if new_var_name in modified_connection:
             modified_connection.remove(new_var_name)
             new_var_already_exists = True
+        else:
+            new_var_already_exists = False
+
+
         parent_key_idx = [parent.variables.index(attr) for attr in modified_connection]
         child_key_idx = [child.variables.index(attr) for attr in modified_connection]
 
@@ -409,7 +416,7 @@ def weighted_median_linear(elements, weights, total_weight):
     """
 
     elements = np.array(elements, dtype=object)  # Enable boolean indexing
-    print(elements)
+    # print(elements)
     weights = np.asarray(weights)
     assert len(elements) == len(weights)
 
