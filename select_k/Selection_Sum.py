@@ -64,13 +64,13 @@ class Selection_Sum:
             pivot = self.pick_pivot(current_root, self.query.sum_order)
 
             remaining_answers = sum(current_root.select_count)
-            print("Remaining answers: ", remaining_answers)
-            print("Starting root: ", current_root.relation.instance_row)
-            print("Starting child: ", current_root.children[0].relation.instance_row)
+            # print("Remaining answers: ", remaining_answers)
+            # print("Starting root: ", current_root.relation.instance_row)
+            # print("Starting child: ", current_root.children[0].relation.instance_row)
 
             pivot_sum = sum(pivot[var] * weight for (var, weight) in self.query.sum_order.items())
             pivot['sum'] = pivot_sum
-            print("Pivot selected: ", pivot)
+            # print("Pivot selected: ", pivot)
 
             # Create a new query (with a new database) that produces the answers that are smaller than the pivot
             # (satisfying the inequality SUM < pivot['sum'])
@@ -78,11 +78,11 @@ class Selection_Sum:
             root_less_than = self.trim_lt_inequality(current_root, self.sum_vars_1, self.sum_vars_2, pivot_sum)
             Selection.bottom_up_count(root_less_than)
             count_less_than = sum(root_less_than.select_count)
-            print("Count less than pivot: ", count_less_than)
-            print("Root in less than vars: ", root_less_than.relation.variables)
-            print("Root in less than: ", root_less_than.relation.instance_row)
-            print("Child in less than vars: ", root_less_than.children[0].relation.variables)
-            print("Child in less than: ", root_less_than.children[0].relation.instance_row)
+            # print("Count less than pivot: ", count_less_than)
+            # print("Root in less than vars: ", root_less_than.relation.variables)
+            # print("Root in less than: ", root_less_than.relation.instance_row)
+            # print("Child in less than vars: ", root_less_than.children[0].relation.variables)
+            # print("Child in less than: ", root_less_than.children[0].relation.instance_row)
 
             root_greater_than = self.trim_gt_inequality(current_root, self.sum_vars_1, self.sum_vars_2, pivot_sum)
             Selection.bottom_up_count(root_greater_than)
@@ -109,6 +109,7 @@ class Selection_Sum:
 
             if early_stopping and remaining_answers < db_size:
                 # TODO: If the remaining answers are less than the database size, then perform the join
+                # current_root is the current join tree which needs to be joined
                 raise Exception("Early stopping not yet implemented.")
 
     @staticmethod
