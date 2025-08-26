@@ -52,22 +52,20 @@ class Selection_Sum:
         Select the k-th record according to the sum order.
         """
 
-        # To calculate the correct SUMs we need to assign each SUM variable to a specific join tree node
-        # (Otherwise, we would for example double-count b in R(a, b), S(b, c))
-        # However, double-counting does not influence the relative position of the tuples
-        # So, it is fine to skip that step and double-count some variables
-
         current_root = self.root
 
         while True:
             # Pick a good pivot (i.e., an answer that is relatively in the middle of the ranking)
             pivot = self.pick_pivot(current_root, self.query.sum_order)
-            pivot_sum = sum(pivot[var] for var in self.query.sum_order)
-            pivot['sum'] = pivot_sum
-            print("Pivot selected: ", pivot)
 
             remaining_answers = sum(current_root.select_count)
             print("Remaining answers: ", remaining_answers)
+            print("Starting root: ", current_root.relation.instance_row)
+            print("Starting child: ", current_root.children[0].relation.instance_row)
+
+            pivot_sum = sum(pivot[var] * weight for (var, weight) in self.query.sum_order.items())
+            pivot['sum'] = pivot_sum
+            print("Pivot selected: ", pivot)
 
             # Create a new query (with a new database) that produces the answers that are smaller than the pivot
             # (satisfying the inequality SUM < pivot['sum'])
@@ -76,7 +74,9 @@ class Selection_Sum:
             Selection.bottom_up_count(root_less_than)
             count_less_than = sum(root_less_than.select_count)
             print("Count less than pivot: ", count_less_than)
+            print("Root in less than vars: ", root_less_than.relation.variables)
             print("Root in less than: ", root_less_than.relation.instance_row)
+            print("Child in less than vars: ", root_less_than.children[0].relation.variables)
             print("Child in less than: ", root_less_than.children[0].relation.instance_row)
 
             root_greater_than = self.trim_gt_inequality(current_root, self.sum_vars_1, self.sum_vars_2, pivot_sum)
@@ -101,6 +101,7 @@ class Selection_Sum:
                 current_root = root_greater_than
                 remaining_answers = count_greater_than
                 k = k - count_less_than - count_equal
+
 
             # TODO: the iterative process should stop early, when the remaining answers are significantly less than the database size
             # At that point, we should just join and sort
@@ -154,27 +155,36 @@ class Selection_Sum:
 
 
         # Create new auxiliary variables between the two relations that will encode the inequality condition
-        # (If such a variable already exists, we reuse it)
+        # Also create a new columsn that stores the sum of each tuple (needed for sorting)
+        # (If such variables already exist, we reuse them)
         new_var_name = '__lt_var' if direction == -1 else '__gt_var'
         # root
         if new_var_name in new_relation_root.variables:
-            ineq_var_root_idx = new_relation_root.variables.index(new_var_name)
+            # sum must also exist
+            None
         else:
-            new_relation_root.variables = new_relation_root.variables + (new_var_name,)
-            new_relation_root.width += 1
-            ineq_var_root_idx = len(new_relation_root.variables) - 1
-            # Adjust the connection of the root to the child, adding the new variable to the existing connection
+            if "sum" in new_relation_root.variables:
+                # sum exists at the end of the tuples because an iteration with a different inequality direction has occured
+                # move the sum var to the end
+                new_relation_root.variables = new_relation_root.variables[:-1] + (new_var_name,) + ("sum",)
+                new_relation_root.width += 1
+                new_relation_child.variables = new_relation_child.variables[:-1] + (new_var_name,) + ("sum",)
+                new_relation_child.width += 1
+            else:
+                # Add both variables to the end
+                new_relation_root.variables = new_relation_root.variables + (new_var_name,) + ("sum",)
+                new_relation_child.variables = new_relation_child.variables + (new_var_name,) + ("sum",)
+                new_relation_root.width += 2
+                new_relation_child.width += 2
+
+            # Adjust the connections of the root to the child, adding the new variable to the existing connection
             new_root.children_connection[new_root.children[0]].add(new_var_name)
-        # child
-        if new_var_name in new_relation_child.variables:
-            ineq_var_child_idx = new_relation_child.variables.index(new_var_name)
-        else:
-            new_relation_child.variables = new_relation_child.variables + (new_var_name,)
-            new_relation_child.width += 1
-            ineq_var_child_idx = len(new_relation_child.variables) - 1
-            # Adjust the parent connection of the child to the root, adding the new variable to the existing connection
             new_root.children[0].parent_connection.add(new_var_name)
 
+        sum_var_root_idx = new_relation_root.variables.index("sum")
+        ineq_var_root_idx = new_relation_root.variables.index(new_var_name)
+        sum_var_child_idx = new_relation_child.variables.index("sum")
+        ineq_var_child_idx = new_relation_child.variables.index(new_var_name)
 
         # Now we are ready to modify the data
         Selection_Sum.trim_data_inequality(new_relation_root, new_relation_child, root.relation, root.children[0].relation, root.children_connection[root.children[0]],
@@ -185,7 +195,8 @@ class Selection_Sum:
     @staticmethod
     def trim_data_inequality(new_parent: Relation, new_child: Relation, parent: Relation, child: Relation, connection: list, \
                                 ineq_var_parent_idx: int, ineq_var_child_idx: int, \
-                                sum_vars_parent: list, sum_vars_child: list, offset: float, direction: int):
+                                sum_vars_parent: list, sum_vars_child: list, \
+                                offset: float, direction: int):
         """
         Enforce the inequality SUM_parent < -SUM_child + offset on the given relations.
         Populates new_parent and new_child with data.
@@ -198,10 +209,10 @@ class Selection_Sum:
             new_var_value_id += 1
             for parent_row in parent_tuples:
                 # Set a common value for the inequality variable in this group of tuples, and remove the sum value at the end
-                new_parent_row = parent_row[:ineq_var_parent_idx] + (new_var_value_id,) + parent_row[(ineq_var_parent_idx + 1):-1]
+                new_parent_row = parent_row[:ineq_var_parent_idx] + (new_var_value_id,) + parent_row[(ineq_var_parent_idx + 1):]
                 new_parent.instance_row.append(new_parent_row)
             for child_row in child_tuples:
-                new_child_row = child_row[:ineq_var_child_idx] + (new_var_value_id,) + child_row[(ineq_var_child_idx + 1):-1]
+                new_child_row = child_row[:ineq_var_child_idx] + (new_var_value_id,) + child_row[(ineq_var_child_idx + 1):]
                 new_child.instance_row.append(new_child_row)
 
 
@@ -216,21 +227,36 @@ class Selection_Sum:
             mid_distinct = num_distinct_vals // 2
             low_distinct_vals = distinct_vals_sorted[:mid_distinct]
             high_distinct_vals = distinct_vals_sorted[mid_distinct:]
-            breakpoint_val = distinct_vals_sorted[mid_distinct]
+            breakpoint_val = distinct_vals_sorted[mid_distinct] # Belongs to high
 
             # Partition the tuples on low/high
             parent_breakpoint = len(parent_tuples_sorted)
             for (i, tup) in enumerate(parent_tuples_sorted):
                 if tup[-1] >= breakpoint_val:
-                    parent_breakpoint = i
+                    parent_breakpoint = i # Index where high starts
+                    break
             child_breakpoint = len(child_tuples_sorted)
             for (i, tup) in enumerate(child_tuples_sorted):
                 if tup[-1] >= breakpoint_val:
-                    child_breakpoint = i
+                    child_breakpoint = i # Index where high starts
+                    break
             parent_low = parent_tuples_sorted[:parent_breakpoint]
             parent_high = parent_tuples_sorted[parent_breakpoint:]
             child_low = child_tuples_sorted[:child_breakpoint]
             child_high = child_tuples_sorted[child_breakpoint:]
+
+            # print("======== Rec Part =========")
+            # print("Distinct vals:", distinct_vals_sorted)
+            # print("Breakpoint val:", breakpoint_val)
+            # print("Parent:", parent_tuples_sorted)
+            # print("Parent breakpoint:", parent_breakpoint)
+            # print("Parent low:", parent_low)
+            # print("Parent high:", parent_high)
+            # print("Child:", child_tuples_sorted)
+            # print("Child breakpoint:", child_breakpoint)
+            # print("Child low:", child_low)
+            # print("Child high:", child_high)
+            # print("=================")
 
             if direction == -1:
                 # Less than: Connect parent_low to child_high
@@ -262,7 +288,7 @@ class Selection_Sum:
         child_partition = defaultdict(list)
 
         # If the inequality variable was already in the connection, remove it when checking for equality
-        # The reason is that we want to overwrite the variable with new values
+        # The reason is that we want to overwrite the variable with new values (the inequalities keep restricting the data)
         modified_connection = connection.copy()
         new_var_name = '__lt_var' if direction == -1 else '__gt_var'
         if new_var_name in modified_connection:
@@ -277,26 +303,24 @@ class Selection_Sum:
 
         # TODO: handle the case of empty connection
 
-        # Create copies of the tuples that contain 
-        # 1) the new variable (if they don't) at the correct index and its value is 0
+
+        # Create copies of the tuples that contain (if they don't already):
+        # 1) the new variable at the correct index and its value is 0
         # 2) the SUM value as the last element (this includes the offset for the child)
         # Then, partition the rows so that each partition has the rows that share the same join key
+        # Parent
         for row in parent.instance_row:
             sum_val = sum(row[indx] * factor for (indx, factor) in sum_vars_parent)
-            if not new_var_already_exists:
-                new_row = row + (0, sum_val)  # add the new variable initialized to 0
-            else:
-                new_row = row[:ineq_var_parent_idx] + (0,) + row[ineq_var_parent_idx:] + (sum_val,)
+            new_row = row[:ineq_var_parent_idx] + (0,) + row[(ineq_var_parent_idx + 1):] + (sum_val,)
             key = tuple(row[i] for i in parent_key_idx)
             parent_partition.setdefault(key, []).append(new_row)
+        # Child
         for row in child.instance_row:
             sum_val = sum(row[indx] * factor for (indx, factor) in sum_vars_child) + offset
-            if not new_var_already_exists:
-                new_row = row + (0, sum_val)
-            else:
-                new_row = row[:ineq_var_child_idx] + (0,) + row[ineq_var_child_idx:] + (sum_val,)
+            new_row = row[:ineq_var_child_idx] + (0,) + row[(ineq_var_child_idx + 1):] + (sum_val,)
             key = tuple(row[i] for i in child_key_idx)
             child_partition.setdefault(key, []).append(new_row)
+
 
         for key in parent_partition.keys():
             if not child_partition[key]:
@@ -330,6 +354,11 @@ class Selection_Sum:
 
     @staticmethod
     def pick_pivot(root, sum_order):
+
+        # To calculate the correct SUMs we need to assign each SUM variable to a specific join tree node
+        # (Otherwise, we would for example double-count b in R(a, b), S(b, c))
+        # However, double-counting does not influence the relative position of the tuples
+        # So, it is fine to skip that step and double-count some variables
 
         def bottom_up_pivot(node:JoinTreeNode): 
             # print('BOTTOM UP PIVOT') 
@@ -399,8 +428,10 @@ class Selection_Sum:
 
         # Compute a pivot for each tuple (corresponding to its joining subtree)
         bottom_up_pivot(root)
-        # Take the weighted median of the pivots of the root
-        final_pivot = weighted_median_linear(root.pivots, root.select_count, sum(root.select_count))
+        # Take the weighted median of the pivots of the root, ignoring those that don't join
+        root_pivots = [p for p, w in zip(root.pivots, root.select_count) if w > 0]
+        root_weights = [w for w in root.select_count if w > 0]
+        final_pivot = weighted_median_linear(root_pivots, root_weights, sum(root_weights))
         return final_pivot
 
         
@@ -414,26 +445,26 @@ def weighted_median_linear(elements, weights, total_weight):
     weights: the number of times each element appears, same length as values
     total_weight: float, the total weight of all tuples
     """
+    def weighted_select_linear(elements, weights, total_weight, k):
+        elements = np.array(elements, dtype=object)  # Enable boolean indexing
+        weights = np.asarray(weights)
+        assert len(elements) == len(weights)
 
-    elements = np.array(elements, dtype=object)  # Enable boolean indexing
-    # print(elements)
-    weights = np.asarray(weights)
-    assert len(elements) == len(weights)
+        if len(elements) == 1:
+            return elements[0]
+        pivot_idx = np.random.randint(len(elements))
+        pivot = elements[pivot_idx]
+        left_mask = np.array([t['sum'] < pivot['sum'] for t in elements])
+        right_mask = np.array([t['sum'] > pivot['sum'] for t in elements])
+        eq_mask = np.array([t['sum'] == pivot['sum'] for t in elements])
 
-    if len(elements) == 1:
-        return elements[0]
-    pivot_idx = np.random.randint(len(elements))
-    pivot = elements[pivot_idx]
-    left_mask = np.array([t['sum'] < pivot['sum'] for t in elements])
-    right_mask = np.array([t['sum'] > pivot['sum'] for t in elements])
-    eq_mask = np.array([t['sum'] == pivot['sum'] for t in elements])
+        w_left = weights[left_mask].sum()
+        w_eq = weights[eq_mask].sum()
+        if k < w_left:
+            return weighted_select_linear(elements[left_mask], weights[left_mask], w_left, k)
+        elif k < w_left + w_eq:
+            return pivot
+        else:
+            return weighted_select_linear(elements[right_mask], weights[right_mask], total_weight - w_left - w_eq, k - w_left - w_eq)
 
-    w_left = weights[left_mask].sum()
-    w_eq = weights[eq_mask].sum()
-    if w_left > total_weight / 2:
-        return weighted_median_linear(elements[left_mask], weights[left_mask], total_weight)
-    elif w_left + w_eq < total_weight / 2:
-        return weighted_median_linear(elements[right_mask], weights[right_mask], total_weight)
-    else:
-        return pivot
-
+    return weighted_select_linear(elements, weights, total_weight, len(elements) // 2)

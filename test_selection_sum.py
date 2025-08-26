@@ -2,6 +2,7 @@
 from select_k.Query import ConjunctiveQuery
 from select_k.Selection_Sum import Selection_Sum
 import pandas as pd
+import itertools
 # %%
 def selection_by_sum(atoms, free_vars, sum_order, data, k): 
     cq = ConjunctiveQuery(atoms, free_vars, data = data, sum_order = sum_order)
@@ -34,8 +35,8 @@ def smart_join_and_sort(atoms, data, sum_order, free_variables):
         df_result = df_result.sort_values(by='sum').drop(columns='sum').reset_index(drop=True)
     elif isinstance(sum_order, dict):
         sort_cols = [v for v in sum_order if v in df_result.columns]
-        df_result['weighted_sum'] = df_result[list(sum_order.keys())].mul(list(sum_order.values()), axis=1).sum(axis=1)
-        df_result = df_result.sort_values(by='weighted_sum').drop(columns='weighted_sum').reset_index(drop=True)
+        df_result['sum'] = df_result[list(sum_order.keys())].mul(list(sum_order.values()), axis=1).sum(axis=1)
+        df_result = df_result.sort_values(by='sum')
     else:
         # If sum_order is not a list or dict, throw error
         raise ValueError("Invalid sum_order format")
@@ -46,21 +47,30 @@ def smart_join_and_sort(atoms, data, sum_order, free_variables):
 
 def test_s(): 
     df_result = smart_join_and_sort(atoms, data, sum_order, free_vars)
+
+    if isinstance(sum_order, list):
+        sum_cols = [v for v in sum_order if v in df_result.columns]
+        df_result['sum'] = df_result[sum_cols].sum(axis=1)
+    elif isinstance(sum_order, dict):
+        df_result['sum'] = df_result[list(sum_order.keys())].mul(list(sum_order.values()), axis=1).sum(axis=1)
+    else:
+        # If sum_order is not a list or dict, throw error
+        raise ValueError("Invalid sum_order format")
+
     print(df_result)
 
     df_list = df_result.to_dict(orient='records') 
     df_list = [{k: v for k, v in d.items() if k != 'index'} for d in df_list]
     flag = 1
-    print_res = ''
     for i, row_dict in enumerate(df_list): 
         print('K index: ', i, " : ", row_dict)
         selection_res = selection_by_sum(atoms, free_vars, sum_order, data, i) 
         if row_dict != selection_res:
             # Check if the sum is the same (rearrangement because of ties)
-            if not (row_dict['weighted_sum'] == selection_res['weighted_sum']):
+            if not (row_dict['sum'] == selection_res['sum']):
                 flag = 0 
-                print_res += f"Mismatch at row {i}:\n  correct:  {row_dict}\n  selection: {selection_res}\n"
-    print(print_res)
+                print(f"Mismatch at row {i}:\n  correct:  {row_dict}\n  selection: {selection_res}\n")
+                return
     if flag: 
         print("PASS ALL")
         
@@ -86,49 +96,125 @@ data = {
         'c': [1, 3, 2],
     },
 }
-sum_order = ['a', 'b', 'c']
-# sum_order = {'c':-1, 'a':1, }
-# test_s()
-k = 2
+# sum_order = ['a', 'b', 'c']
+sum_order = {'c':-1, 'a':1, }
+k = 3 # Expected answer: {'a': 5, 'b': 2, 'c': 3}
 print("Answer returned for k= ", k, ": ", selection_by_sum(atoms, free_vars, sum_order, data, k))
 
-# %%
-# Non-full CQ
-# atoms = [
-#     ('A', ('u', 'v', 'x')),       # A(u, v, x)
-#     ('B', ('v', 'w', 'y')),       # B(v, w, y) -- join on v
-#     ('C', ('x', 'z')),            # C(x, z) -- join on x
-#     ('D', ('p', 'q')),            # D(p, q) -- Cartesian join (no shared vars)
-# ]
-
-# data = {
-#     'A': {
-#         'u': ['u1', 'u2', 'u3', 'u1', 'u2'],
-#         'v': ['v1', 'v2', 'v1', 'v2', 'v3'],
-#         'x': ['x1', 'x2', 'x3', 'x1', 'x4'],
-#     },
-#     'B': {
-#         'v': ['v1', 'v1', 'v2', 'v3', 'v2'],
-#         'w': ['w1', 'w2', 'w1', 'w3', 'w2'],
-#         'y': ['y1', 'y2', 'y3', 'y4', 'y5'],
-#     },
-#     'C': {
-#         'x': ['x1', 'x2', 'x3', 'x2', 'x1'],
-#         'z': ['z1', 'z2', 'z3', 'z4', 'z5'],
-#     },
-#     'D': {
-#         'p': [1, 2, 3],
-#         'q': ['q2', 'q1', 'q3'],
-#     }
-# }
-# lex_order = ['u', 'v', 'x', 'y', 'z']
-# free_vars = ['u', 'v', 'x', 'y', 'z']
-# test_s()
 
 # %%
-"""
-Test for single k
-"""
-# k = 12
-# result = selection(atoms, free_vars, lex_order, data, k)
+# 2 relations with more variables. Full acyclic CQ
+free_vars = ['a', 'b', 'c', 'd', 'e']
+atoms = [('P', ('a', 'b', 'c')), ('Q', ('c', 'b', 'd', 'e'))]
+
+a_list = range(1, 10)
+b_list_1 = range(1, 10)
+c_list_1 = range(1, 10)
+
+c_list_2 = range(3, 13)
+b_list_2 = range(3, 13)
+d_list = range(3, 13)
+e_list = range(3, 13)
+
+data = {
+    'P': {
+        'a': a_list,
+        'b': b_list_1,
+        'c': c_list_1,
+    },
+    'Q': {
+        'b': b_list_2,
+        'c': c_list_2,
+        'd': d_list,
+        'e': e_list,
+    },
+}
+sum_order = ['a', 'b', 'c', 'd', 'e']
+# sum_order = {'c':-1, 'a':1, }
+test_s()
+
+
 # %%
+# 2 relations with more complex data. Full acyclic CQ
+free_vars = ['a', 'b', 'c']
+atoms = [('P', ('a', 'b')), ('Q', ('b', 'c'))]
+
+# [(2, 3), (3, 2), (3, 3), (3, 4), (4, 3)]
+# [(3, 3), (3, 4), (3, 5), (4, 5), (5, 5)]
+a_list =   [2, 3, 3, 3, 4]
+b_list_1 = [3, 2, 3, 4, 3]
+b_list_2 = [3, 3, 3, 4, 5]
+c_list =   [3, 4, 5, 5, 5]
+
+data = {
+    'P': {
+        'a': a_list,
+        'b': b_list_1,
+    },
+    'Q': {
+        'b': b_list_2,
+        'c': c_list,
+    },
+}
+sum_order = ['a', 'b', 'c']
+test_s()
+
+
+# %%
+# 2 relations with more complex data. Full acyclic CQ
+free_vars = ['a', 'b', 'c']
+atoms = [('P', ('a', 'b')), ('Q', ('b', 'c'))]
+
+# [(2, 3), (2, 4), (3, 2), (3, 3), (3, 4), (4, 3), (4, 4)]
+# [(3, 3), (3, 4), (3, 5), (4, 3), (4, 4), (4, 5), (5, 5)]
+a_list =   [2, 2, 3, 3, 3, 4, 4]
+b_list_1 = [3, 4, 2, 3, 4, 3, 4]
+b_list_2 = [3, 3, 3, 4, 4, 4, 5]
+c_list =   [3, 4, 5, 3, 4, 5, 5]
+
+data = {
+    'P': {
+        'a': a_list,
+        'b': b_list_1,
+    },
+    'Q': {
+        'b': b_list_2,
+        'c': c_list,
+    },
+}
+sum_order = {'c':-1, 'a':1, }
+test_s()
+
+
+# %%
+# Larger stress test. Full acyclic CQ
+free_vars = ['a', 'b', 'c']
+atoms = [('P', ('a', 'b')), ('Q', ('b', 'c'))]
+
+a_vals = range(1, 5)
+b_vals = range(1, 5)
+product = list(itertools.product(a_vals, b_vals))
+a_list, b_list_1 = zip(*product)
+a_list = list(a_list)
+b_list_1 = list(b_list_1)
+
+b_vals = range(2, 6)
+c_vals = range(2, 6)
+product = list(itertools.product(b_vals, c_vals))
+b_list_2, c_list = zip(*product)
+b_list_2 = list(b_list_2)
+c_list = list(c_list)
+
+data = {
+    'P': {
+        'a': a_list,
+        'b': b_list_1,
+    },
+    'Q': {
+        'b': b_list_2,
+        'c': c_list,
+    },
+}
+sum_order = ['a', 'b', 'c']
+# sum_order = {'c':-1, 'a':1, }
+test_s()
