@@ -47,12 +47,17 @@ class Selection_Sum:
                 raise Exception(f"SUM variable {var} not found in either of the 2 designated relations.")
 
     @timer(name="SelectK", extra=lambda ctx: f"exp={ctx.exp_id}_trial={ctx.trial}" if hasattr(ctx, 'exp_id') and hasattr(ctx, 'trial') else None)
-    def select_k(self, k:int): 
+    def select_k(self, k:int, early_stopping:bool=False): 
         """
         Select the k-th record according to the sum order.
         """
 
         current_root = self.root
+
+        if early_stopping:
+            db_size = 0
+            for rel in self.query.data.values():
+                db_size += len(rel)
 
         while True:
             # Pick a good pivot (i.e., an answer that is relatively in the middle of the ranking)
@@ -102,9 +107,9 @@ class Selection_Sum:
                 remaining_answers = count_greater_than
                 k = k - count_less_than - count_equal
 
-
-            # TODO: the iterative process should stop early, when the remaining answers are significantly less than the database size
-            # At that point, we should just join and sort
+            if early_stopping and remaining_answers < db_size:
+                # TODO: If the remaining answers are less than the database size, then perform the join
+                raise Exception("Early stopping not yet implemented.")
 
     @staticmethod
     def trim_lt_inequality(root: JoinTreeNode, sum_vars_root: list, sum_vars_child: list, offset: float):
