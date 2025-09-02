@@ -39,6 +39,7 @@ def main():
     k_sql_list = [10**i for i in range(0, 7) if 10**i <= max_k]
     k_sql_list_ext = [k for k in k_list if k not in k_sql_list]
     quartile_list = gen_quartile(res_len)
+    median_list = [int(0.50 * res_len) - 1]
 
     with open(data_dir / "k_list.json", "w") as f:
         json.dump(k_list, f, indent=2)
@@ -51,6 +52,9 @@ def main():
 
     with open(data_dir / "quartile_list.json", "w") as f:
         json.dump(quartile_list, f, indent=2)
+
+    with open(data_dir / "median_list.json", "w") as f:
+        json.dump(median_list, f, indent=2)
 
 if __name__ == "__main__":
     main()

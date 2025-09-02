@@ -1,6 +1,8 @@
 # import numpy as np
 from typing import Dict, Tuple, Optional, List
 
+import pandas as pd
+
 class Relation:
     def __init__(self, name: str, 
                  variables: List[str]|Tuple[str], 
@@ -95,12 +97,21 @@ class Relation:
         """
         project and remove duplicates
         """
-        new_data = []
+        if not new_vars:
+            return []
+        
+        df = pd.DataFrame(data, columns=orig_vars)
+        df_proj = df[new_vars].drop_duplicates(keep='first')
 
-        if new_vars: 
-            # project to corresponding columns
-            indices = [orig_vars.index(c) for c in new_vars] 
-            new_data = list(dict.fromkeys(tuple(row[i] for i in indices) for row in data)) # keep the original order (we CARE!!! the order here)
+        return list(df_proj.itertuples(index=False, name=None))
+
+        # new_data = []
+
+        # if new_vars: 
+        #     # project to corresponding columns
+        #     indices = [orig_vars.index(c) for c in new_vars] 
+        #     new_data = list(dict.fromkeys(tuple(row[i] for i in indices) for row in data)) # keep the original order (we CARE!!! the order here)
+        ##  print('check data', data1 == new_data)
 
         return new_data
     

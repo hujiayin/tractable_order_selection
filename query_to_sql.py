@@ -61,6 +61,7 @@ def main():
             f.write(stmt + "\n")
         for stmt in copy_stmts:
             f.write(stmt + "\n")
+        f.write("VACUUM ANALYZE;\n")
 
     with open(f"{output_dir}/query_template.sql", "w") as f:
         f.write(f"SELECT {select_clause}\n{join_query}ORDER BY {order_clause} OFFSET {{k}} LIMIT 1;\n")

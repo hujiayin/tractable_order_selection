@@ -4,7 +4,7 @@ from select_k.JoinTreeNode import JoinTreeNode
 from select_k.Relation import Relation
 import numpy as np
 from collections import defaultdict
-from exp_timer.exp_timer import timer
+from exp_timer.exp_timer import time_block, timer
 
 class LayeredJoinTree:
     @timer(name="PrepareTree", extra=lambda ctx: f"exp={ctx.exp_id}_trial={ctx.trial}" if hasattr(ctx, 'exp_id') and hasattr(ctx, 'trial') else None)
@@ -206,7 +206,8 @@ class LayeredJoinTree:
         for order in leaf_to_root_order:        
             layer = order[0] 
 
-            self.direct_access_tree[layer].preprocess_buckets()
+            with time_block(f"Preprocess Layer {layer}"):
+                self.direct_access_tree[layer].preprocess_buckets()
 
         # for i in range(len(leaf_to_root_order)): 
         #     print(self.direct_access_tree[i+1].buckets)

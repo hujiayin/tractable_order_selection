@@ -1,6 +1,7 @@
 import numpy as np
 from select_k.Relation import Relation
 from collections import deque, defaultdict
+from exp_timer.exp_timer import time_block, timer
 class JoinTreeNode:
     """
     Node of the Join Tree, covering part of the variables
@@ -47,27 +48,32 @@ class JoinTreeNode:
         # table_dict = table.cols
 
         parent_attrs = self.parent_connection
-        is_leaf = False if self.children else True
+        is_leaf = not bool(self.children)
 
         n_rows = len(row_id)
+        var_pos = {v:i for i, v in enumerate(self.relation.variables)}
         prefix_mapping = defaultdict(list)
+
+        # with time_block(f"attribute mapping, {n_rows}"):
         if parent_attrs: 
-            attr_map = [self.relation.variables.index(attr) for attr in parent_attrs]
+            parent_pos = tuple(var_pos[a] for a in parent_attrs)
+            # attr_map = [self.relation.variables.index(attr) for attr in parent_attrs]
             # prefix_keys = []
             # bucket_start_positions = []
             
             for i in range(n_rows): 
                 idx = row_id[i]
-                key_tup = tuple(data[idx][attr] for attr in attr_map)
+                key_tup = tuple(data[idx][p] for p in parent_pos)
+                # key_tup = tuple(data[idx][attr] for attr in attr_map)
                 prefix_mapping[key_tup].append(idx)
 
         else:
             # parent_attrs is empty. prefix_key=()
-            prefix_mapping [()] = row_id 
-        
+            prefix_mapping [()] = row_id
 
-        buckets = {} 
-        for current_prefix, idx_list in prefix_mapping.items(): 
+        buckets = {}
+        # with time_block(f"establish buckets"):
+        for current_prefix, idx_list in prefix_mapping.items():
             start = 0  # start_index of record
             count_wb = 0  # weight of the total bucket 
             bucket_data = []
@@ -87,9 +93,13 @@ class JoinTreeNode:
                         else:
                             # no parent_attrs in children
                             child_bucket_weight = child.buckets.get((), {'weight': 0})['weight']
-                        
-                        wgt *= child_bucket_weight 
-                
+
+                        if child_bucket_weight == 0:
+                            wgt = 0
+                            break
+
+                        wgt *= child_bucket_weight
+
                 end = start + wgt
                 bucket_data.append((idx, wgt, start, end)) 
 
